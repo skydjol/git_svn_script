@@ -1,0 +1,30 @@
+revision=$(svn info  ${2} | awk '/Rév/ { print $7 }')
+echo revision
+echo ${revision}
+
+git clone -o mirror ${1} ${3}
+cd ${3}
+echo init
+git svn init --prefix=mirror/ -s ${2}
+echo rebase
+git svn rebase --authors-file=/root/git_clone/authors.txt
+
+echo fetch
+git svn fetch -r${revision}
+
+shopt -s extglob
+
+rm -fr .git/refs/remotes/mirror/HEAD
+rm -fr .git/refs/remotes/mirror/master
+rm -fr .git/refs/remotes/mirror/trunk
+
+cp -Rf .git/refs/remotes/mirror/tags/!(*@*) .git/refs/tags/
+rm -Rf .git/refs/remotes/mirror/tags
+
+cp -Rf .git/refs/remotes/mirror/!(*@*) .git/refs/heads/
+rm -Rf .git/refs/remotes/mirror
+
+echo push
+git push mirror --all
+git push mirror --tags
+
